@@ -37,8 +37,8 @@ def parse(String description) {
             sendEvent(name: "temperature", value: temperature, unit: "°C")
         }
 
-        // Handle Humidity Measurement
-        else if (descMap.cluster == "0405" && descMap.attrId == "0000") {
+        // Handle Humidity Measurement with encoding check
+        else if (descMap.cluster == "0405" && descMap.attrId == "0000" && descMap.encoding == "21") {
             def humidity = zigbee.convertHexToInt(descMap.value) / 100.0
             log.info "Humidity: ${humidity}%"
             sendEvent(name: "humidity", value: humidity, unit: "%")
@@ -54,6 +54,7 @@ def parse(String description) {
         log.warn "Unparsed message: ${description}"
     }
 }
+
 
 def refreshBattery() {
     if (enableDebug) log.debug "Requesting battery voltage"
@@ -75,12 +76,15 @@ def configure() {
 
     // Temperature Reporting
     cmds += zigbee.configureReporting(0x0402, 0x0000, 0x29, minTempInterval, maxTempInterval, tempChangeHex)
-    
+    if (enableDebug) log.debug "Temperature reporting configured: Min=${minTempInterval}s, Max=${maxTempInterval}s, Change=${tempChangeHex / 100.0}°C"
+
     // Humidity Reporting
     cmds += zigbee.configureReporting(0x0405, 0x0000, 0x21, minHumidityInterval, maxHumidityInterval, humidityChangeHex)
+    if (enableDebug) log.debug "Humidity reporting configured: Min=${minHumidityInterval}s, Max=${maxHumidityInterval}s, Change=${humidityChangeHex / 100.0}%"
 
     // Battery Reporting
     cmds += zigbee.batteryConfig()
+    if (enableDebug) log.debug "Battery reporting configured"
 
     return cmds
 }
