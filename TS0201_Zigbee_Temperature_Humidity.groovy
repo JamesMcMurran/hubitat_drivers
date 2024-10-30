@@ -14,6 +14,7 @@ metadata {
 
     preferences {
         input name: "enableDebug", type: "bool", title: "Enable Debug Logging", description: "Turn on debug logging", defaultValue: true
+        input name: "tempUnit", type: "enum", title: "Temperature Unit", options: ["Celsius", "Fahrenheit"], defaultValue: "Celsius"
         input name: "tempMinInterval", type: "number", title: "Temperature Min Reporting Interval (seconds)", defaultValue: 30
         input name: "tempMaxInterval", type: "number", title: "Temperature Max Reporting Interval (seconds)", defaultValue: 300
         input name: "tempChange", type: "decimal", title: "Temperature Reportable Change (°C)", defaultValue: 0.1
@@ -32,9 +33,11 @@ def parse(String description) {
 
         // Handle Temperature Measurement
         if (descMap.cluster == "0402" && descMap.attrId == "0000") {
-            def temperature = zigbee.convertHexToInt(descMap.value) / 100.0
-            log.info "Temperature: ${temperature}°C"
-            sendEvent(name: "temperature", value: temperature, unit: "°C")
+            def temperatureC = zigbee.convertHexToInt(descMap.value) / 100.0
+            def temperature = (tempUnit == "Fahrenheit") ? (temperatureC * 1.8 + 32).setScale(2, BigDecimal.ROUND_HALF_UP) : temperatureC
+            def unit = (tempUnit == "Fahrenheit") ? "°F" : "°C"
+            log.info "Temperature: ${temperature}${unit}"
+            sendEvent(name: "temperature", value: temperature, unit: unit)
         }
 
         // Handle Humidity Measurement with encoding check
@@ -88,7 +91,6 @@ def configure() {
 
     return cmds
 }
-
 
 def refresh() {
     if (enableDebug) log.debug "Refreshing attributes"
