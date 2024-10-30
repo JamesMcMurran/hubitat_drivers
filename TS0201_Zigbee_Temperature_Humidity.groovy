@@ -64,19 +64,27 @@ def configure() {
     if (enableDebug) log.debug "Configuring reporting for Temperature, Humidity, and Battery"
     def cmds = []
 
-    // Temperature Reporting with user-defined intervals and change threshold
-    def tempChangeHex = (tempChange * 100).toInteger()  // Convert to centi-degrees
-    cmds += zigbee.configureReporting(0x0402, 0x0000, 0x29, tempMinInterval, tempMaxInterval, tempChangeHex)  
+    // Convert user preferences to Integer for configureReporting method
+    def minTempInterval = tempMinInterval.toInteger()
+    def maxTempInterval = tempMaxInterval.toInteger()
+    def tempChangeHex = (tempChange * 100).toInteger()  // Convert to centi-degrees and to Integer
+
+    def minHumidityInterval = humidityMinInterval.toInteger()
+    def maxHumidityInterval = humidityMaxInterval.toInteger()
+    def humidityChangeHex = (humidityChange * 100).toInteger()  // Convert to centi-percent and to Integer
+
+    // Temperature Reporting
+    cmds += zigbee.configureReporting(0x0402, 0x0000, 0x29, minTempInterval, maxTempInterval, tempChangeHex)
     
-    // Humidity Reporting with user-defined intervals and change threshold
-    def humidityChangeHex = (humidityChange * 100).toInteger()  // Convert to centi-percent
-    cmds += zigbee.configureReporting(0x0405, 0x0000, 0x21, humidityMinInterval, humidityMaxInterval, humidityChangeHex)
+    // Humidity Reporting
+    cmds += zigbee.configureReporting(0x0405, 0x0000, 0x21, minHumidityInterval, maxHumidityInterval, humidityChangeHex)
 
     // Battery Reporting
     cmds += zigbee.batteryConfig()
 
     return cmds
 }
+
 
 def refresh() {
     if (enableDebug) log.debug "Refreshing attributes"
